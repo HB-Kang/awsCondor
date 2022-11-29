@@ -6,6 +6,7 @@ CBNU / School of Computer Science / 강형빈
 설정은 글로 남기고 코드만 Github로 관리
 
 11/28(월)-----------------------------------
+
 개발 환경 구축
 Windows10
 - VirtualBox (Ubuntu)
