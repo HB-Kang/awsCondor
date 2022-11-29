@@ -8,11 +8,13 @@ CBNU / School of Computer Science / 강형빈
 11/28(월)-----------------------------------
 
 개발 환경 구축
+
 Windows10
 - VirtualBox (Ubuntu)
   - Eclipse
   - JAVA JDK
   - AWS SDK
+
 문제점 : region 설정을 필요로 함
 
 11/29(화)-----------------------------------
