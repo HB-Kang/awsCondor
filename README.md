@@ -21,6 +21,7 @@ Windows10
 
 region 설정 문제 해결
  - aws cli - configure를 통해 csv키 등록
+
 IAM 권한 문제 발생
  - EC2 권한만 줬었는데, Elastic 권한 부여
 
