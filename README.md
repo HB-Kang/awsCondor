@@ -16,6 +16,7 @@ Windows10
 문제점 : region 설정을 필요로 함
 
 11/29(화)-----------------------------------
+
 region 설정 문제 해결
  - aws cli - configure를 통해 csv키 등록
 IAM 권한 문제 발생
