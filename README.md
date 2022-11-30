@@ -28,7 +28,7 @@ CBNU / School of Computer Science / 강형빈
  11/29(화)-----------------------------------
 
 - Master, Slave 인스턴스 생성 및 설정
- - Slave를 AMI 이미지화
+  - Slave를 AMI 이미지화
  
 - 네트워크 문제 발생
   - 보안 그룹 설정을 통해 인,아웃바운드 규칙 설정
