@@ -9,8 +9,8 @@ CBNU / School of Computer Science / 강형빈
 
 개발 환경 구축
 
-Windows10
-- VirtualBox (Ubuntu)
+- Windows10
+ - VirtualBox (Ubuntu)
   - Eclipse
   - JAVA JDK
   - AWS SDK
@@ -19,9 +19,19 @@ Windows10
 
 11/29(화)-----------------------------------
 
-region 설정 문제 해결
+- region 설정 문제 해결
  - aws cli - configure를 통해 csv키 등록
 
-IAM 권한 문제 발생
+- IAM 권한 문제 발생
  - EC2 권한만 줬었는데, Elastic 권한 부여
+ 
+ 11/29(화)-----------------------------------
+
+- Master, Slave 인스턴스 생성 및 설정
+ - Slave를 AMI 이미지화
+ 
+- 네트워크 문제 발생
+ - 보안 그룹 설정을 통해 인,아웃바운드 규칙 설정
+ - 새로 생성될 instance에도 설정을 위해 JAVA 코드 수정
+ 
 
