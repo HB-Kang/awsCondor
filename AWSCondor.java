@@ -288,7 +288,8 @@ public class AWSCondor {
 			.withImageId(ami_id)
 			.withInstanceType(InstanceType.T2Micro)
 			.withMaxCount(1)
-			.withMinCount(1);
+			.withMinCount(1)
+			.withSecurityGroups(sgr-01dff3c6cc999784a);
 
 		RunInstancesResult run_response = ec2.runInstances(run_request);
 
