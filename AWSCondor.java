@@ -1,5 +1,6 @@
 package aws;
 
+
 /*
 * Cloud Computing
 * 
@@ -7,8 +8,16 @@ package aws;
 * using AWS Java SDK Library
 * 
 */
+
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
+
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
@@ -34,6 +43,14 @@ import com.amazonaws.services.ec2.model.DescribeImagesRequest;
 import com.amazonaws.services.ec2.model.DescribeImagesResult;
 import com.amazonaws.services.ec2.model.Image;
 import com.amazonaws.services.ec2.model.Filter;
+import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagementClientBuilder;
+import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagement;
+import com.amazonaws.services.simplesystemsmanagement.model.CommandInvocation;
+import com.amazonaws.services.simplesystemsmanagement.model.ListCommandInvocationsRequest;
+import com.amazonaws.services.simplesystemsmanagement.model.SendCommandRequest;
+import com.amazonaws.services.simplesystemsmanagement.model.SendCommandResult;
+import com.amazonaws.services.simplesystemsmanagement.model.Target;
+
 
 public class AWSCondor {
 
@@ -64,99 +81,183 @@ public class AWSCondor {
 		Scanner menu = new Scanner(System.in);
 		Scanner id_string = new Scanner(System.in);
 		int number = 0;
+		int ui = 0;
 		
 		while(true)
 		{
-			System.out.println("                                                            ");
-			System.out.println("                                                            ");
-			System.out.println("------------------------------------------------------------");
-			System.out.println("           Amazon AWS Control Panel using SDK               ");
-			System.out.println("------------------------------------------------------------");
-			System.out.println("  1. list instance                2. available zones        ");
-			System.out.println("  3. start instance               4. available regions      ");
-			System.out.println("  5. stop instance                6. create instance        ");
-			System.out.println("  7. reboot instance              8. list images            ");
-			System.out.println("                                 99. quit                   ");
-			System.out.println("------------------------------------------------------------");
-			
-			System.out.print("Enter an integer: ");
-			
-			if(menu.hasNextInt()){
-				number = menu.nextInt();
-				}else {
-					System.out.println("concentration!");
+			if(ui==0)
+			{
+				System.out.println("                                                            ");
+				System.out.println("------------------------------------------------------------");
+				System.out.println("           Amazon AWS Control Panel using SDK               ");
+				System.out.println("------------------------------------------------------------");
+				System.out.println("  1. list instance                2. available zones        ");
+				System.out.println("  3. start instance               4. available regions      ");
+				System.out.println("  5. stop instance                6. create instance        ");
+				System.out.println("  7. reboot instance              8. list images            ");
+				System.out.println("  9. Ver.2                       99. quit                   ");
+				System.out.println("------------------------------------------------------------");
+				
+				System.out.print("Enter an integer: ");
+				
+				if(menu.hasNextInt()){
+					number = menu.nextInt();
+					}else {
+						System.out.println("Wrong!");
+						break;
+					}
+				String instance_id = "";
+
+				switch(number) {
+				case 1: 
+					listInstances();
 					break;
+					
+				case 2: 
+					availableZones();
+					break;
+					
+				case 3: 
+					System.out.print("Enter instance id: ");
+					if(id_string.hasNext())
+						instance_id = id_string.nextLine();
+					
+					if(!instance_id.isBlank()) 
+						startInstance(instance_id);
+					break;
+
+				case 4: 
+					availableRegions();
+					break;
+
+				case 5: 
+					System.out.print("Enter instance id: ");
+					if(id_string.hasNext())
+						instance_id = id_string.nextLine();
+					
+					if(!instance_id.isBlank()) 
+						stopInstance(instance_id);
+					break;
+
+				case 6: 
+					System.out.print("Enter ami id: ");
+					String ami_id = "";
+					if(id_string.hasNext())
+						ami_id = id_string.nextLine();
+					
+					if(!ami_id.isBlank()) 
+						createInstance(ami_id);
+					break;
+
+				case 7: 
+					System.out.print("Enter instance id: ");
+					if(id_string.hasNext())
+						instance_id = id_string.nextLine();
+					
+					if(!instance_id.isBlank()) 
+						rebootInstance(instance_id);
+					break;
+
+				case 8: 
+					listImages();
+					break;
+				case 9: 
+					ui = 1;
+					break;
+
+				case 99: 
+					System.out.println("bye!");
+					menu.close();
+					id_string.close();
+					return;
+				default: System.out.println("Wrong number!");
 				}
-			
-
-			String instance_id = "";
-
-			switch(number) {
-			case 1: 
-				listInstances();
-				break;
-				
-			case 2: 
-				availableZones();
-				break;
-				
-			case 3: 
-				System.out.print("Enter instance id: ");
-				if(id_string.hasNext())
-					instance_id = id_string.nextLine();
-				
-				if(!instance_id.isBlank()) 
-					startInstance(instance_id);
-				break;
-
-			case 4: 
-				availableRegions();
-				break;
-
-			case 5: 
-				System.out.print("Enter instance id: ");
-				if(id_string.hasNext())
-					instance_id = id_string.nextLine();
-				
-				if(!instance_id.isBlank()) 
-					stopInstance(instance_id);
-				break;
-
-			case 6: 
-				System.out.print("Enter ami id: ");
-				String ami_id = "";
-				if(id_string.hasNext())
-					ami_id = id_string.nextLine();
-				
-				if(!ami_id.isBlank()) 
-					createInstance(ami_id);
-				break;
-
-			case 7: 
-				System.out.print("Enter instance id: ");
-				if(id_string.hasNext())
-					instance_id = id_string.nextLine();
-				
-				if(!instance_id.isBlank()) 
-					rebootInstance(instance_id);
-				break;
-
-			case 8: 
-				listImages();
-				break;
-
-			case 99: 
-				System.out.println("bye!");
-				menu.close();
-				id_string.close();
-				return;
-			default: System.out.println("concentration!");
 			}
-
+			else if(ui==1)
+			{
+				System.out.println("                                                            ");
+				System.out.println("------------------------------------------------------------");
+				System.out.println("            Amazon AWS Control Panel Ver. 2                 ");
+				System.out.println("------------------------------------------------------------");
+				System.out.println("  1. condor_status                                          ");			
+				System.out.println("  9. back                        99. quit                   ");
+				System.out.println("------------------------------------------------------------");
+				
+				System.out.print("Enter an integer: ");
+				
+				if(menu.hasNextInt()){
+					number = menu.nextInt();
+					}else {
+						System.out.println("Wrong!");
+						break;
+					}
+				String instance_id = "";
+				
+				switch(number) {
+				case 1: 
+					condor_status();
+					break;
+				case 9: 
+					ui = 0;
+					break;
+				case 99: 
+					System.out.println("bye!");
+					menu.close();
+					id_string.close();
+					return;
+				default: System.out.println("Wrong number!");
+				}	
+			}
 		}
-		
 	}
-
+	public static void condor_status() throws InterruptedException
+	{
+		String ssmCommand = "condor_status";
+		
+		System.out.printf("Request to Master (i-02bdda2cab116a4c8) .... \n");
+		Map<String, List<String>> params = new HashMap<String, List<String>>(){{
+	        put("commands", new ArrayList<String>(){{ add(ssmCommand); }});
+	    }};
+		Target target = new Target().withKey("InstanceIds").withValues("i-02bdda2cab116a4c8");
+		
+	    AWSSimpleSystemsManagement ssm = AWSSimpleSystemsManagementClientBuilder.standard().build();
+		SendCommandRequest commandRequest = new SendCommandRequest()
+			.withTargets(target)
+			.withDocumentName("AWS-RunShellScript")
+			.withParameters(params);
+		
+	    SendCommandResult commandResult = ssm.sendCommand(commandRequest);
+	    String commandId = commandResult.getCommand().getCommandId();
+		
+		String status;
+	    do {
+	        ListCommandInvocationsRequest request = new ListCommandInvocationsRequest()
+	                .withCommandId(commandId)
+	                .withDetails(true);
+	        //You get one invocation per ec2 instance that you added to target
+	        //For just a single instance use get(0) else loop over the instanced
+	        CommandInvocation invocation = ssm.listCommandInvocations(request).getCommandInvocations().get(0);
+	        status = invocation.getStatus();
+	        if(status.equals("Success")) {
+	            //command output holds the output of running the command
+	            //eg. list of directories in case of ls
+	        	
+	            String commandOutput = invocation.getCommandPlugins().get(0).getOutput();
+	            System.out.printf("\nCondor Status ---------------------------------------\n%s\n", commandOutput);
+	            //Process the output
+	        }
+	        //Wait for a few seconds before you check the invocation status again
+	        try {
+	            TimeUnit.SECONDS.sleep(5);
+	        } catch (InterruptedException e) {
+	            //Handle not being able to sleep
+	        }
+	    } while(status.equals("Pending") || status.equals("InProgress"));
+	    if(!status.equals("Success")) {
+	        //Command ended up in a failure
+	    }
+	    
+	}
 	public static void listInstances() {
 		
 		System.out.println("Listing instances....");
@@ -289,8 +390,7 @@ public class AWSCondor {
 			.withInstanceType(InstanceType.T2Micro)
 			.withMaxCount(1)
 			.withMinCount(1)
-			.withSecurityGroups(sgr-01dff3c6cc999784a);
-
+			.withSecurityGroups("BoanOpen");
 		RunInstancesResult run_response = ec2.runInstances(run_request);
 
 		String reservation_id = run_response.getReservation().getInstances().get(0).getInstanceId();
@@ -331,12 +431,10 @@ public class AWSCondor {
 		
 		DescribeImagesRequest request = new DescribeImagesRequest();
 		ProfileCredentialsProvider credentialsProvider = new ProfileCredentialsProvider();
-		
-		request.getFilters().add(new Filter().withName("name").withValues("htcondor-slave-image"));
+		request.getFilters().add(new Filter().withName("name").withValues("awscondor_slave"));
 		request.setRequestCredentialsProvider(credentialsProvider);
-		
 		DescribeImagesResult results = ec2.describeImages(request);
-		
+
 		for(Image images :results.getImages()){
 			System.out.printf("[ImageID] %s, [Name] %s, [Owner] %s\n", 
 					images.getImageId(), images.getName(), images.getOwnerId());
