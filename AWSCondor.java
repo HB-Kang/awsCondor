@@ -33,6 +33,7 @@ import com.amazonaws.services.ec2.model.Region;
 import com.amazonaws.services.ec2.model.AvailabilityZone;
 import com.amazonaws.services.ec2.model.DryRunSupportedRequest;
 import com.amazonaws.services.ec2.model.StopInstancesRequest;
+import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ec2.model.StartInstancesRequest;
 import com.amazonaws.services.ec2.model.InstanceType;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
@@ -53,7 +54,7 @@ import com.amazonaws.services.simplesystemsmanagement.model.Target;
 
 
 public class AWSCondor {
-
+	
 	static AmazonEC2      ec2;
 
 	private static void init() throws Exception {
@@ -82,6 +83,8 @@ public class AWSCondor {
 		Scanner id_string = new Scanner(System.in);
 		int number = 0;
 		int ui = 0;
+		String[] list_instances = new String[10];
+		String[] list_images = new String[10];	
 		
 		while(true)
 		{
@@ -105,12 +108,13 @@ public class AWSCondor {
 					}else {
 						System.out.println("Wrong!");
 						break;
-					}
+				}
 				String instance_id = "";
 
 				switch(number) {
 				case 1: 
-					listInstances();
+					System.out.println("Listing instances....");
+					listInstances(list_instances);
 					break;
 					
 				case 2: 
@@ -159,7 +163,7 @@ public class AWSCondor {
 					break;
 
 				case 8: 
-					listImages();
+					listImages(list_images);
 					break;
 				case 9: 
 					ui = 1;
@@ -177,12 +181,13 @@ public class AWSCondor {
 			{
 				System.out.println("                                                            ");
 				System.out.println("------------------------------------------------------------");
-				System.out.println("            Amazon AWS Control Panel Ver. 2                 ");
+				System.out.println("           Amazon AWS Control Panel Ver. 2                  ");
 				System.out.println("------------------------------------------------------------");
-				System.out.println("  1. condor_status                                          ");			
+				System.out.println("  1. instances                   2. images                  ");
+				System.out.println("  3. jobs                        4. HTCondor                ");
+				System.out.println("  5. condor_status               6. condor_q                ");			
 				System.out.println("  9. back                        99. quit                   ");
 				System.out.println("------------------------------------------------------------");
-				
 				System.out.print("Enter an integer: ");
 				
 				if(menu.hasNextInt()){
@@ -195,27 +200,101 @@ public class AWSCondor {
 				
 				switch(number) {
 				case 1: 
-					condor_status();
+					New_Instances(list_instances);
+					
+					break;
+				case 2: 
+					listImages(list_images);
+					
+					break;
+				case 3: 
+					break;
+				case 4: 
+					break;
+				case 5: 
+					RunShellScript("condor_status");
+					break;
+				case 6: 
+					RunShellScript("condor_q");
 					break;
 				case 9: 
 					ui = 0;
 					break;
 				case 99: 
-					System.out.println("bye!");
+					System.out.println("bye!!");
 					menu.close();
 					id_string.close();
 					return;
-				default: System.out.println("Wrong number!");
+				default: System.out.println("Wrong number!!");
 				}	
 			}
 		}
 	}
-	public static void condor_status() throws InterruptedException
-	{
-		String ssmCommand = "condor_status";
+	public static void New_Instances(String[] list_instances) {
+		Scanner scannum = new Scanner(System.in);
+		boolean done = false;
+		int num1 = 0;
+		int num2 = 0;
+		int num3 = 0;
+		while(!done) {
+			listInstances(list_instances);
+			System.out.print("Select Instance (Quit:0): ");
+			if(scannum.hasNextInt()){
+				num1 = scannum.nextInt();
+				}else {
+					System.out.println("Wrong!!");
+					break;
+			}
+			if(num1 == 0) { System.out.print("Quit"); break; }
+			if(list_instances[num1-1] == "") {
+				System.out.println("No Instance!!"); break; }
+			System.out.println("------------------------------------------------------------");
+			System.out.printf("  (%d)"+" [id] %s\n",num1,list_instances[num1-1]);
+			System.out.println("------------------------------------------------------------");
+			System.out.println("  1. Start                       2. Stop                    ");
+			System.out.println("  3. Reboot                      4. Terminate               ");	
+			System.out.println("                                 9. Done                    ");
+			System.out.println("------------------------------------------------------------");
+			System.out.print("Select Task: ");
+			if(scannum.hasNextInt()){
+				num2 = scannum.nextInt();
+				}else {
+					System.out.println("Wrong!!");
+					break;
+			}
+			switch(num2) {
+			case 1: 
+				startInstance(list_instances[num1-1]);
+				break;
+			case 2: 
+				stopInstance(list_instances[num1-1]);
+				break;
+			case 3: 
+				rebootInstance(list_instances[num1-1]);
+				break;
+			case 4: 
+				System.out.print("Sure?(yes:1, no:0): ");
+				if(scannum.hasNextInt()){
+					num3 = scannum.nextInt();
+					}else {
+						System.out.println("Wrong!!");
+						break;
+				}
+				if(num3 == 1) terminateInstance(list_instances[num1-1]);
+				break;
+			case 9: 
+				return;
+			default: System.out.println("Wrong number!!");
+			}
+			try {
+	            TimeUnit.SECONDS.sleep(1);
+	        } catch (InterruptedException e) {}
+		}
+	}
+	public static void RunShellScript(String ssmCommand) throws InterruptedException{
 		
 		System.out.printf("Request to Master (i-02bdda2cab116a4c8) .... \n");
-		Map<String, List<String>> params = new HashMap<String, List<String>>(){{
+		Map<String, List<String>> para = new HashMap<String, List<String>>(){{
 	        put("commands", new ArrayList<String>(){{ add(ssmCommand); }});
 	    }};
 		Target target = new Target().withKey("InstanceIds").withValues("i-02bdda2cab116a4c8");
@@ -224,7 +303,7 @@ public class AWSCondor {
 		SendCommandRequest commandRequest = new SendCommandRequest()
 			.withTargets(target)
 			.withDocumentName("AWS-RunShellScript")
-			.withParameters(params);
+			.withParameters(para);
 		
 	    SendCommandResult commandResult = ssm.sendCommand(commandRequest);
 	    String commandId = commandResult.getCommand().getCommandId();
@@ -234,36 +313,29 @@ public class AWSCondor {
 	        ListCommandInvocationsRequest request = new ListCommandInvocationsRequest()
 	                .withCommandId(commandId)
 	                .withDetails(true);
-	        //You get one invocation per ec2 instance that you added to target
-	        //For just a single instance use get(0) else loop over the instanced
 	        CommandInvocation invocation = ssm.listCommandInvocations(request).getCommandInvocations().get(0);
 	        status = invocation.getStatus();
-	        if(status.equals("Success")) {
-	            //command output holds the output of running the command
-	            //eg. list of directories in case of ls
-	        	
+	        if(status.equals("Success")) {        	
 	            String commandOutput = invocation.getCommandPlugins().get(0).getOutput();
-	            System.out.printf("\nCondor Status ---------------------------------------\n%s\n", commandOutput);
-	            //Process the output
+	            System.out.printf("\n%s\n"+"------------------------------------------------------------\n%s\n",ssmCommand, commandOutput);
+	            System.out.println("------------------------------------------------------------");
 	        }
-	        //Wait for a few seconds before you check the invocation status again
 	        try {
-	            TimeUnit.SECONDS.sleep(5);
-	        } catch (InterruptedException e) {
-	            //Handle not being able to sleep
-	        }
+	            TimeUnit.SECONDS.sleep(1);
+	        } catch (InterruptedException e) {}
 	    } while(status.equals("Pending") || status.equals("InProgress"));
-	    if(!status.equals("Success")) {
-	        //Command ended up in a failure
-	    }
-	    
+	    if(!status.equals("Success")) {}
 	}
-	public static void listInstances() {
-		
-		System.out.println("Listing instances....");
+
+	public static void listInstances(String[] list_instances) {
+		System.out.println("");
+		System.out.println("------------------------------------------------------------");
+		System.out.println("                    Instance List                           ");
+		System.out.println("------------------------------------------------------------");
 		boolean done = false;
 		
 		DescribeInstancesRequest request = new DescribeInstancesRequest();
+		int count = 0;
 		
 		while(!done) {
 			DescribeInstancesResult response = ec2.describeInstances(request);
@@ -271,23 +343,30 @@ public class AWSCondor {
 			for(Reservation reservation : response.getReservations()) {
 				for(Instance instance : reservation.getInstances()) {
 					System.out.printf(
+						"(%d) " +
 						"[id] %s, " +
-						"[AMI] %s, " +
+						"[state] %8s, " +
 						"[type] %s, " +
-						"[state] %10s, " +
+						"[AMI] %s, " +
 						"[monitoring state] %s",
-						instance.getInstanceId(),
-						instance.getImageId(),
-						instance.getInstanceType(),
+						count+1,
+						list_instances[count] = instance.getInstanceId(),
 						instance.getState().getName(),
+						instance.getInstanceType(),
+						instance.getImageId(),
 						instance.getMonitoring().getState());
+					count++;
 				}
 				System.out.println();
 			}
-
+			
 			request.setNextToken(response.getNextToken());
-
 			if(response.getNextToken() == null) {
+				while(count!=10) {
+					list_instances[count] = "";
+					count++;
+				}
+				System.out.println("------------------------------------------------------------");
 				done = true;
 			}
 		}
@@ -339,7 +418,6 @@ public class AWSCondor {
 		System.out.printf("Successfully started instance %s", instance_id);
 	}
 	
-	
 	public static void availableRegions() {
 		
 		System.out.println("Available regions ....");
@@ -373,6 +451,30 @@ public class AWSCondor {
 				.withInstanceIds(instance_id);
 	
 			ec2.stopInstances(request);
+			System.out.printf("Successfully stop instance %s\n", instance_id);
+
+		} catch(Exception e)
+		{
+			System.out.println("Exception: "+e.toString());
+		}
+
+	}
+	public static void terminateInstance(String instance_id) {
+		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
+
+		DryRunSupportedRequest<TerminateInstancesRequest> dry_request =
+			() -> {
+				TerminateInstancesRequest request = new TerminateInstancesRequest()
+				.withInstanceIds(instance_id);
+
+			return request.getDryRunRequest();
+		};
+
+		try {
+			TerminateInstancesRequest request = new TerminateInstancesRequest()
+				.withInstanceIds(instance_id);
+	
+			ec2.terminateInstances(request);
 			System.out.printf("Successfully stop instance %s\n", instance_id);
 
 		} catch(Exception e)
@@ -424,7 +526,8 @@ public class AWSCondor {
 		
 	}
 	
-	public static void listImages() {
+	public static void listImages(String[] list_images) {
+		int count = 0;
 		System.out.println("Listing images....");
 		
 		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
@@ -437,7 +540,12 @@ public class AWSCondor {
 
 		for(Image images :results.getImages()){
 			System.out.printf("[ImageID] %s, [Name] %s, [Owner] %s\n", 
-					images.getImageId(), images.getName(), images.getOwnerId());
+					list_images[count] = images.getImageId(), images.getName(), images.getOwnerId());
+			count++;
+		}
+		while(count!=10) {
+			list_images[count] = "";
+			count++;
 		}
 		
 	}
