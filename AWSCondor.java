@@ -31,6 +31,10 @@ import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeRegionsResult;
 import com.amazonaws.services.ec2.model.Region;
 import com.amazonaws.services.ec2.model.AvailabilityZone;
+import com.amazonaws.services.ec2.model.CreateImageRequest;
+import com.amazonaws.services.ec2.model.CreateImageResult;
+import com.amazonaws.services.ec2.model.DeregisterImageRequest;
+import com.amazonaws.services.ec2.model.DeregisterImageResult;
 import com.amazonaws.services.ec2.model.DryRunSupportedRequest;
 import com.amazonaws.services.ec2.model.StopInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
@@ -184,8 +188,8 @@ public class AWSCondor {
 				System.out.println("           Amazon AWS Control Panel Ver. 2                  ");
 				System.out.println("------------------------------------------------------------");
 				System.out.println("  1. instances                   2. images                  ");
-				System.out.println("  3. jobs                        4. HTCondor                ");
-				System.out.println("  5. condor_status               6. condor_q                ");			
+				System.out.println("  3. run test jobs (5 times)     4. condor_status           ");
+				System.out.println("  5. condor_q                    6. condor_rm               ");			
 				System.out.println("  9. back                        99. quit                   ");
 				System.out.println("------------------------------------------------------------");
 				System.out.print("Enter an integer: ");
@@ -201,21 +205,22 @@ public class AWSCondor {
 				switch(number) {
 				case 1: 
 					New_Instances(list_instances);
-					
 					break;
 				case 2: 
-					listImages(list_images);
-					
+					New_Images(list_images, list_instances);
 					break;
 				case 3: 
+					RunShellScript("pwd");
+					RunShellScript("condor_submit test20times.jds");
 					break;
 				case 4: 
-					break;
-				case 5: 
 					RunShellScript("condor_status");
 					break;
-				case 6: 
+				case 5: 
 					RunShellScript("condor_q");
+					break;
+				case 6: 
+					RunShellScript("condor_rm");
 					break;
 				case 9: 
 					ui = 0;
@@ -291,6 +296,111 @@ public class AWSCondor {
 	        } catch (InterruptedException e) {}
 		}
 	}
+	public static void New_Images(String[] list_images, String[] list_instances) {
+		Scanner scannum = new Scanner(System.in);
+		boolean done = false;
+		int num1 = 0;
+		int num2 = 0;
+		int num3 = 0;
+		int num4 = 0;
+		while(!done) {
+			listImages(list_images);
+			System.out.println("------------------------------------------------------------");
+			System.out.println("  1. Create Instance by Image    2. Create More Instances   ");
+			System.out.println("  3. Create Image by Instance    4. Delete Image            ");	
+			System.out.println("                                 9. Done                    ");
+			System.out.println("------------------------------------------------------------");
+			System.out.print("Select Task: ");
+			if(scannum.hasNextInt()){
+				num1 = scannum.nextInt();
+				}else {
+					System.out.println("Wrong!!");
+					break;
+			}
+			switch(num1) {
+			case 1: 
+				System.out.print("Select Image(Quit:0): ");
+				if(scannum.hasNextInt()){
+					num2 = scannum.nextInt();
+					}else {
+						System.out.println("Wrong!!");
+						break;
+				}
+				if(num2 == 0) { System.out.print("Quit"); break; }
+				if(list_images[num2-1] == "") {
+					System.out.println("No Image!!"); break; }
+
+				System.out.printf("Create Instance by %s...", list_images[num2-1]);
+				createInstance(list_images[num2-1]);
+				break;
+			case 2: 
+				System.out.print("Select Image(Quit:0): ");
+				if(scannum.hasNextInt()){
+					num2 = scannum.nextInt();
+					}else {
+						System.out.println("Wrong!!");
+						break;
+				}
+				if(num2 == 0) { System.out.print("Quit"); break; }
+				if(list_images[num2-1] == "") {
+					System.out.println("No Image!!"); break; }
+				System.out.print("How Many Instances: ");
+				if(scannum.hasNextInt()){
+					num3 = scannum.nextInt();
+					}else {
+						System.out.println("Wrong!!");
+						break;
+				}
+				System.out.printf("Create Instance by %s (%d times)...\n", list_images[num2-1],num3);
+				for(int i = 0; i<num3; i++) {
+					createInstance(list_images[num2-1]);}
+				break;
+			case 3: 
+				listInstances(list_instances);
+				System.out.print("Select Instance(Quit:0): ");
+				if(scannum.hasNextInt()){
+					num2 = scannum.nextInt();
+					}else {
+						System.out.println("Wrong!!");
+						break;
+				}
+				if(num2 == 0) { System.out.print("Quit"); break; }
+				if(list_instances[num2-1] == "") {
+					System.out.println("No Image!!"); break; }
+				System.out.printf("Create Image by %s...\n", list_instances[num2-1]);
+				createImage(list_instances[num2-1]);
+				break;
+			case 4: 
+				System.out.print("Select Image(Quit:0): ");
+				if(scannum.hasNextInt()){
+					num2 = scannum.nextInt();
+					}else {
+						System.out.println("Wrong!!");
+						break;
+				}
+				if(num2 == 0) { System.out.print("Quit"); break; }
+				if(list_images[num2-1] == "") {
+					System.out.println("No Image!!"); break; }
+
+				
+				System.out.print("Sure?(yes:1, no:0): ");
+				if(scannum.hasNextInt()){
+					num4 = scannum.nextInt();
+					}else {
+						System.out.println("Wrong!!");
+						break;
+				}
+				if(num4 == 1) {
+					System.out.printf("Delete Image %s...", list_images[num2-1]);
+					deleteImage(list_images[num2-1]);
+				}
+				break;
+			case 9: 
+				return;
+			default: System.out.println("Wrong number!!");
+			}
+		}
+	}
 	public static void RunShellScript(String ssmCommand) throws InterruptedException{
 		
 		System.out.printf("Request to Master (i-02bdda2cab116a4c8) .... \n");
@@ -342,14 +452,19 @@ public class AWSCondor {
 
 			for(Reservation reservation : response.getReservations()) {
 				for(Instance instance : reservation.getInstances()) {
+					String name = "";
+					if(instance.getTags().size()!=0) name = instance.getTags().get(0).getValue();
+					else name = "-";
 					System.out.printf(
 						"(%d) " +
+						"[name] %6s, " +
 						"[id] %s, " +
 						"[state] %8s, " +
 						"[type] %s, " +
 						"[AMI] %s, " +
 						"[monitoring state] %s",
 						count+1,
+						name,
 						list_instances[count] = instance.getInstanceId(),
 						instance.getState().getName(),
 						instance.getInstanceType(),
@@ -484,7 +599,7 @@ public class AWSCondor {
 
 	}
 	
-	public static void createInstance(String ami_id) {
+	public static String createInstance(String ami_id) {
 		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
 		
 		RunInstancesRequest run_request = new RunInstancesRequest()
@@ -498,11 +613,30 @@ public class AWSCondor {
 		String reservation_id = run_response.getReservation().getInstances().get(0).getInstanceId();
 
 		System.out.printf(
-			"Successfully started EC2 instance %s based on AMI %s",
+			"Successfully started EC2 instance %s based on AMI %s\n",
 			reservation_id, ami_id);
+		return reservation_id;
 	
 	}
+	public static void deleteImage(String ami_id) {
+		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
+		
+		DeregisterImageRequest delete_request = new DeregisterImageRequest()
+			.withImageId(ami_id);
+		ec2.deregisterImage(delete_request);
 
+		System.out.printf("Successfully Delete AMI Image %s\n", ami_id);
+	}
+	public static void createImage(String instance_id) {
+		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
+		
+		CreateImageRequest create_request = new CreateImageRequest()
+			.withName("NewImage")
+			.withInstanceId(instance_id);
+		CreateImageResult create_response = ec2.createImage(create_request);
+		String image_id = create_response.getImageId();
+		System.out.printf("Successfully Create AMI Image %s by %s\n", image_id, instance_id);
+	}
 	public static void rebootInstance(String instance_id) {
 		
 		System.out.printf("Rebooting .... %s\n", instance_id);
@@ -528,19 +662,21 @@ public class AWSCondor {
 	
 	public static void listImages(String[] list_images) {
 		int count = 0;
-		System.out.println("Listing images....");
-		
+		System.out.println("");
+		System.out.println("------------------------------------------------------------");
+		System.out.println("                     Image List                             ");
+		System.out.println("------------------------------------------------------------");
 		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
 		
 		DescribeImagesRequest request = new DescribeImagesRequest();
 		ProfileCredentialsProvider credentialsProvider = new ProfileCredentialsProvider();
-		request.getFilters().add(new Filter().withName("name").withValues("awscondor_slave"));
+		request.getFilters().add(new Filter().withName("owner-id").withValues("337845493956"));
 		request.setRequestCredentialsProvider(credentialsProvider);
 		DescribeImagesResult results = ec2.describeImages(request);
 
 		for(Image images :results.getImages()){
-			System.out.printf("[ImageID] %s, [Name] %s, [Owner] %s\n", 
-					list_images[count] = images.getImageId(), images.getName(), images.getOwnerId());
+			System.out.printf("(%s) [ID] %s, [Name] %s, [Owner] %s\n", 
+					count+1, list_images[count] = images.getImageId(), images.getName(), images.getOwnerId());
 			count++;
 		}
 		while(count!=10) {
