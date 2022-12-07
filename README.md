@@ -41,4 +41,7 @@ CBNU / School of Computer Science / 강형빈
 - 추가 기능을 Ver.2 로 UI를 분리하여 구현
   - Condor_status 구현 성공
  
+ 12/7(수)-----------------------------------
+
+- 
 
